@@ -1,0 +1,62 @@
+server:
+  port: 8081
+spring:
+  cloud:
+    stream:
+      instance-count: 1 #The number of deployed instances of an application. Must be set for partitioning and if using Kafka.
+      instance-index: 0 #当前实例index编号，不能重复，位置为（0 至 instance-count-1），与kafka分区有关系
+      default:
+        contentType: application/json
+      #可以动态绑定的目标列表（例如，在动态路由方案中）。如果设置，只能列出目的地。默认值：空。
+      #dynamicDestinations:
+
+      #绑定属性可用于输入和输出绑定
+      #如果通道绑定为消费者，则可以将其绑定到多个目标，并且目标名称可以指定为逗号分隔的字符串值。
+      bindings:
+        myInputOrders:  # spring程序中定义的管道名称
+          destination: topic_myInputOrders
+          group: xiaogroup  #channel的消费者组，仅对inbound bindings有效。
+          consumer:         #消费方
+            concurrency: 1  #默认 入站消费者的并发性
+            partitioned: false # 消费者是否从分区生产者接收数据
+            maxAttempts: 3 #最大尝试数
+            headerMode: embeddedHeaders #默认
+            backOffInitialInterval: 1000
+            #instanceCount表示应用实例的总数，instanceIndex在多个实例中必须唯一，并介于0~（instanceCount-1）之间。
+            # 实例的索引可以帮助每个实例确定唯一的接收数据的分区，正确的设置这两个值十分重要，用来确保所有的数据被消耗，以及应用实例接收相互排斥的数据集。
+            instanceIndex: -1 #默认-1，则为spring.cloud.stream.instance-index
+            instanceCount: -1 #默认-1，则为spring.cloud.stream.instance-count
+          producer:
+            # 可以使用 partitionKeyExpression 等方式设置自己的分区策略
+            # Kafka binder 将使用producer的partitionCount设置作为提示来创建具有给定分区计数的主题（与minPartitionCount一起使用，两者中最大的一个是正在使用的值）
+            # 在为binder配置minPartitionCount和为应用程序配置partitionCount时请谨慎，因为将使用较大的值。
+            # 如果一个主题已经存在一个较小的分区数并且autoAddPartitions被禁用（默认）,那么binder将无法启动。
+            # 如果某个主题已经存在，并且分区数量较少，并且启用了autoAddPartitions，则会添加新的分区。
+            # 如果一个主题已经存在，且分区数量超过最大分区数量（minPartitionCount和partitionCount），则将使用现有的分区数量。
+            partitionCount: 1 #如果启用分区，则数据的目标分区数。如果生产者被分区，则必须设置为大于1的值。在Kafka，解释为提示; 而是使用更大的和目标主题的分区计数。
+        myOutputCommodity:  #生成方
+          destination: topic_myOutputCommodity
+          consumer:
+            concurrency: 1  #默认 入站消费者的并发性
+      kafka:
+        binder:
+          brokers: 192.168.8.201  #A list of brokers to which the Kafka binder will connect.
+          # defaultBrokerPort: 9092
+          zkNodes: 192.168.8.201
+          # defaultZkPort: 2181
+          autoCreateTopics: true  #默认
+          autoAddPartitions: false #默认
+          replicationFactor: 1 # 默认1
+        bindings:
+          myInputOrders:
+            consumer:
+              autoRebalanceEnabled: true #默认true，主题分区将在消费者组的成员之间自动重新平衡
+              # autoCommitOffset 与 手动确认
+              #该属性应该为kafka的AckMode确认模式，如果autoCommitOffset设置为false，需要在SPRING中如何手动确认
+              #参考 https://docs.spring.io/spring-cloud-stream/docs/Ditmars.SR3/reference/htmlsingle/#_usage_examples
+              autoCommitOffset: true #默认true
+              autoCommitOnError: false #只有autoCommitOffset设置为true才有效
+              enableDlq: false #默认false, 默认情况下，导致错误的邮件将转发到名为error.<destination>.<group>的主题
+              #configuration: #Default: Empty map. Map with a key/value pair containing generic Kafka consumer properties.
+            #producer:
+              #configuration: #Default: Empty map. Map with a key/value pair containing generic Kafka producer properties.

@@ -1,0 +1,35 @@
+server:
+  port: 8080
+spring:
+  cloud:
+    stream:
+      #instance-count: 1 #The number of deployed instances of an application. Must be set for partitioning and if using Kafka.
+      #instance-index: 0 #当前实例index编号，不能重复，位置为（0 至 instance-count-1），与kafka分区有关系
+      #可以动态绑定的目标列表（例如，在动态路由方案中）。如果设置，只能列出目的地。默认值：空。
+      #dynamicDestinations:
+      #绑定属性可用于输入和输出绑定
+      #如果通道绑定为消费者，则可以将其绑定到多个目标，并且目标名称可以指定为逗号分隔的字符串值。
+      bindings:
+        myOutputCommodity:  # spring程序中定义的管道名称
+          destination: topic_myOutputCommodity
+          producer:
+            # 可以使用 partitionKeyExpression 等方式设置自己的分区策略
+            # Kafka binder 将使用producer的partitionCount设置作为提示来创建具有给定分区计数的主题（与minPartitionCount一起使用，两者中最大的一个是正在使用的值）
+            # 在为binder配置minPartitionCount和为应用程序配置partitionCount时请谨慎，因为将使用较大的值。
+            # 如果一个主题已经存在一个较小的分区数并且autoAddPartitions被禁用（默认）,那么binder将无法启动。
+            # 如果某个主题已经存在，并且分区数量较少，并且启用了autoAddPartitions，则会添加新的分区。
+            # 如果一个主题已经存在，且分区数量超过最大分区数量（minPartitionCount和partitionCount），则将使用现有的分区数量。
+            partitionCount: 3 # 分区数（注意！与消费实例spring.cloud.stream.instance-count相等！！！ 一般来说，考虑与broker数量一致）
+      kafka:
+        binder:
+          brokers: 192.168.8.201,192.168.8.202,192.168.8.203  #A list of brokers to which the Kafka binder will connect.
+          # defaultBrokerPort: 9092
+          zkNodes: 192.168.8.201,192.168.8.202,192.168.8.203
+          # defaultZkPort: 2181
+          autoCreateTopics: true  #默认
+          autoAddPartitions: true #默认 false
+          replicationFactor: 1 # 默认1
+        #bindings:
+          #myOutputCommodity:
+            #producer:
+              #configuration: #Default: Empty map. Map with a key/value pair containing generic Kafka producer properties.
